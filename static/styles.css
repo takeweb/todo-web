@@ -1,0 +1,63 @@
+/* ベーススタイル */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+}
+
+/* コンテンツのコンテナ */
+.container {
+    width: 50%;
+    max-width: 600px; /* 最大幅を設定 */
+    margin: 0 auto; /* 左右中央揃え */
+    padding: 16px;
+    text-align: left; /* 左寄せ */
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* タスクリストのスタイル */
+ul {
+    list-style: none;
+    padding: 0;
+}
+li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    gap: 8px;
+}
+
+/* ボタンのスタイル */
+button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+button:hover {
+    background-color: #d32f2f;
+}
+
+/* 入力欄とボタンを横並びにするフォームのスタイル */
+.form-group {
+    display: flex;
+    align-items: center;
+    margin-top: 16px;
+}
+input[type="text"] {
+    flex: 1;
+    padding: 8px;
+    margin-right: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
