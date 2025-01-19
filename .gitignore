@@ -21,6 +21,7 @@ Cargo.lock
 #.idea/
 
 
-# SQLite temp files
+# SQLite files
+db/*.db
 db/*.db-shm
 db/*.db-wal
