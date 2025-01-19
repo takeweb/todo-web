@@ -11,9 +11,16 @@ cargo new todo-web
 cargo add actix-web
 cargo add askama
 cargo add askama_actix
-cargo add sqlx --features sqlite,runtime-tokio
+cargo add sqlx --features sqlite,runtime-tokio migration
 cargo add serde --features derive
+cargo add dotenv
 ```
+
+## 改善
+* [x] hello機能を削除
+* [x] SQLiteはインメモリーではなく、ファイルに保存
+* [x] SQLiteのファイル名は、コード直書きではなく、.envから取得
+* [ ] DoneはDELETEではなく、UPDATE
 
 #　使い方
 ## 起動

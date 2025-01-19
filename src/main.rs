@@ -3,12 +3,7 @@ use actix_web::{get, post, web, App, HttpResponse, HttpServer};
 use askama::Template;
 use askama_actix::TemplateToResponse;
 use sqlx::{Pool, Row, Sqlite, SqlitePool};
-
-#[derive(Template)]
-#[template(path = "hello.html")]
-struct HelloTemplate {
-    name: String,
-}
+use std::env;
 
 #[derive(Template)]
 #[template(path = "todo.html")]
@@ -20,14 +15,6 @@ struct TodoTemplate {
 struct Task {
     id: Option<String>,
     task: Option<String>,
-}
-
-#[get("/hello/{name}")]
-async fn hello(name: web::Path<String>) -> HttpResponse {
-    let hello = HelloTemplate {
-        name: name.into_inner(),
-    };
-    hello.to_response()
 }
 
 #[get("/")]
@@ -76,28 +63,14 @@ async fn update(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRespo
 }
 
 async fn init_db_pool() -> Pool<Sqlite> {
-    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
-    sqlx::query("CREATE TABLE tasks(task TEXT)")
-        .execute(&pool)
-        .await
-        .unwrap();
-    sqlx::query("INSERT INTO tasks(task) VALUES('タスク1')")
-        .execute(&pool)
-        .await
-        .unwrap();
-    sqlx::query("INSERT INTO tasks(task) VALUES('タスク2')")
-        .execute(&pool)
-        .await
-        .unwrap();
-    sqlx::query("INSERT INTO tasks(task) VALUES('タスク3')")
-        .execute(&pool)
-        .await
-        .unwrap();
-    sqlx::query("INSERT INTO tasks(task) VALUES('タスク4')")
-        .execute(&pool)
-        .await
-        .unwrap();
-    pool
+    // .envの読み込み
+    dotenv::dotenv().expect(".envの読み込み失敗");
+
+    // DATABASE_URLの取得
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URLがセットされていません");
+
+    // 接続プールの作成
+    SqlitePool::connect(&database_url).await.unwrap()
 }
 
 #[actix_web::main]
@@ -106,7 +79,6 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .service(fs::Files::new("/static", "./static").show_files_listing())
-            .service(hello)
             .service(todo)
             .service(update)
             .app_data(web::Data::new(pool.clone()))
