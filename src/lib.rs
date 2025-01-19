@@ -38,7 +38,7 @@ pub async fn init_db_pool() -> Pool<Sqlite> {
 #[get("/")]
 pub async fn todo(pool: web::Data<SqlitePool>) -> HttpResponse {
     // 未着手のタスクを取得
-    let unstarted_rows = sqlx::query("SELECT id, task FROM tasks WHERE status = 0;")
+    let unstarted_rows = sqlx::query("SELECT id, task FROM tasks WHERE status = 0 ORDER BY id;")
         .fetch_all(pool.as_ref())
         .await
         .unwrap();
@@ -51,7 +51,7 @@ pub async fn todo(pool: web::Data<SqlitePool>) -> HttpResponse {
         .collect();
 
     // 仕掛かり中のタスクを取得
-    let in_progress_rows = sqlx::query("SELECT id, task FROM tasks WHERE status = 1;")
+    let in_progress_rows = sqlx::query("SELECT id, task FROM tasks WHERE status = 1 ORDER BY id;")
         .fetch_all(pool.as_ref())
         .await
         .unwrap();
@@ -64,7 +64,7 @@ pub async fn todo(pool: web::Data<SqlitePool>) -> HttpResponse {
         .collect();
 
     // 完了タスクを取得
-    let completed_rows = sqlx::query("SELECT id, task FROM tasks WHERE status = 9;")
+    let completed_rows = sqlx::query("SELECT id, task FROM tasks WHERE status = 9 ORDER BY id;")
         .fetch_all(pool.as_ref())
         .await
         .unwrap();
@@ -142,11 +142,47 @@ pub async fn done(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRes
         .finish()
 }
 
+#[post("/undo")]
+pub async fn undo(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpResponse {
+    let task = form.into_inner();
+
+    // 戻す(仕掛かり中→未着手)ボタン押下時
+    if let Some(id) = task.id {
+        sqlx::query("UPDATE tasks SET status = 0, started_at = CURRENT_TIMESTAMP WHERE id = ?")
+            .bind(id)
+            .execute(pool.as_ref())
+            .await
+            .unwrap();
+    }
+
+    HttpResponse::Found()
+        .append_header(("Location", "/"))
+        .finish()
+}
+
+#[post("/doing")]
+pub async fn doing(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpResponse {
+    let task = form.into_inner();
+
+    // 戻す(完了→仕掛かり中)ボタン押下時
+    if let Some(id) = task.id {
+        sqlx::query("UPDATE tasks SET status = 1, done_at = NULL WHERE id = ?")
+            .bind(id)
+            .execute(pool.as_ref())
+            .await
+            .unwrap();
+    }
+
+    HttpResponse::Found()
+        .append_header(("Location", "/"))
+        .finish()
+}
+
 #[post("/delete")]
 pub async fn delete(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpResponse {
     let task = form.into_inner();
 
-    // 完了ボタン押下時
+    // 削除ボタン押下時
     if let Some(id) = task.id {
         sqlx::query("DELETE FROM tasks WHERE id = ?")
             .bind(id)

@@ -1,0 +1,68 @@
+/* ベーススタイル */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+}
+
+/* コンテンツのコンテナ */
+.container {
+    width: 80%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
+}
+
+/* タスクリスト全体 */
+.row {
+    gap: 5px; /* 列間の隙間 */
+}
+
+.task-container {
+    max-height: 75vh; /* 必要に応じて高さを調整 */
+    overflow-y: auto; /* 縦スクロールを有効にする */
+    border: 1px solid #ccc; /* コンテナの枠線 */
+    border-radius: 5px; /* 枠線の角を丸くする */
+    padding: 10px; /* 内側の余白 */
+}
+
+h2 {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.task-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #ccc;
+    padding: 8px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.datepicker {
+    max-width: 150px;
+}
+
+.new-task {
+    flex-grow: 1;
+    max-width: 500px;
+}
+
+#calendar-icon {
+    cursor: pointer;
+}

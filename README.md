@@ -16,7 +16,7 @@ cargo add serde --features derive
 cargo add dotenv
 ```
 
-## 改善
+## 機能改善
 * [x] hello機能を削除
 * [x] SQLiteはインメモリーではなく、ファイルに保存
 * [x] SQLiteのファイル名は、コード直書きではなく、.envから取得
@@ -29,9 +29,10 @@ cargo add dotenv
 * [x] ステータスが「未着手(Unstarted)」で追加されたタイミングで「追加日」を現在日時で更新
 * [x] ステータスに「仕掛かり中(In progress)」を追加
 * [x] ステータスが「仕掛かり中(In progress)」になったタイミングで、「着手日」を現在日時で更新
-* [ ] ステータスを「完了(Done)」から「仕掛かり中(In progress)」に戻す
+* [x] ステータスを「仕掛かり中(In progress)」から「未着手(Unstarted)」に戻す機能
+* [x] ステータスを「完了(Done)」から「仕掛かり中(In progress)」に戻す機能
 * [x] ステータスが「完了(Done)」になったタイミングで、「完了日」を現在日時で更新
-* [ ] UIにBootstrap 5の導入
+* [x] UIにBootstrap 5の導入
 * [ ] DATETIME型はUTCで保存される為、表示する際は＋9時間する必要がある
 * [ ] 一覧画面の実装
 * [ ] UIでタスク追加時に期限を設定できるようにする

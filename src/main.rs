@@ -11,6 +11,8 @@ async fn main() -> std::io::Result<()> {
             .service(todo_web::create)
             .service(todo_web::start)
             .service(todo_web::done)
+            .service(todo_web::undo)
+            .service(todo_web::doing)
             .service(todo_web::delete)
             .app_data(web::Data::new(pool.clone()))
     })

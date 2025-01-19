@@ -4,95 +4,173 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TODO App</title>
-    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    <!-- Bootstrap 5 CSS -->
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
       crossorigin="anonymous"
     />
+    <!-- Bootstrap Icons CDN -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <!-- Flatpickr CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
   </head>
   <body>
     <div class="container">
-      <h1>TODO App</h1>
-      <form action="/create" method="post">
-        <!-- 作成欄とボタンを一番上に配置 -->
-        <div class="form-group">
-          <input type="text" name="task" placeholder="新しいタスクを入力" />
-          <button type="submit" class="btn btn-primary">作成</button>
+      <div class="row">
+        <div class="col">
+          <h1>TODO</h1>
         </div>
-      </form>
-
-      <div class="task-list">
+      </div>
+      <div class="row">
+        <div class="col">
+          <form action="/create" method="post">
+            <div class="form-group d-flex">
+              <!-- タスク入力フィールド -->
+              <input
+                type="text"
+                name="task"
+                class="form-control me-2 new-task"
+                placeholder="新しいタスクを入力"
+              />
+              <!-- 日付選択フィールド -->
+              <div class="position-relative">
+                <input
+                  type="text"
+                  id="datepicker"
+                  class="form-control me-2 datepicker"
+                  placeholder="期限を選択"
+                />
+                <!-- カレンダーアイコン -->
+                <i
+                  class="bi bi-calendar position-absolute top-50 end-0 translate-middle-y me-3"
+                  id="calendar-icon"
+                ></i>
+              </div>
+              <!-- 作成ボタン -->
+              <button type="submit" class="btn btn-primary">作成</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="row">
         <!-- 未着手タスク -->
-        <div class="task-column">
-          <h2>未着手</h2>
-            <ul>
+        <div class="col">
+          <h2 class="text-center">未着手</h2>
+          <div class="task-container">
+            <div class="row">
               {% for task in unstarted_tasks %}
-              <li>
-                <span>{{ task.task }}</span>
-                <form action="/start" method="post">
-                  <button
-                  type="submit"
-                  name="id"
-                  class="btn btn-secondary"
-                  value="{{ task.id }}">
-                    削除
-                  </button>
-                </form>
-                <form action="/delete" method="post">
-                  <button
-                    type="submit"
-                    name="id"
-                    class="btn btn-primary"
-                    value="{{ task.id }}">
-                    開始
-                  </button>
-
-                </form>
-              </li>
-              {% endfor %}
-            </ul>
-          </form>
-        </div>
-        <!-- 仕掛かり中のタスク -->
-        <div class="task-column">
-          <h2>仕掛かり中</h2>
-          <form action="/done" method="post">
-            <ul>
-              {% for task in in_progress_tasks %}
-              <li>
-                <span>{{ task.task }}</span>
-                <button
-                  type="submit"
-                  name="id"
-                  class="btn btn-primary"
-                  value="{{ task.id }}"
+              <div class="col-12">
+                <div
+                  class="d-flex align-items-center justify-content-between border p-1 rounded"
+                  style="margin-bottom: 0"
                 >
-                  完了
-                </button>
-              </li>
+                  <div class="flex-grow-1">{{ task.task }}</div>
+                  <form class="d-flex gap-2 mb-0">
+                    <input type="hidden" id="id" value="{{ task.id }}" />
+                    <button
+                      type="button"
+                      id="delete-{{ task.id }}"
+                      class="btn btn-secondary"
+                    >
+                      削除
+                    </button>
+                    <button
+                      type="button"
+                      id="start-{{ task.id }}"
+                      class="btn btn-primary"
+                    >
+                      開始
+                    </button>
+                  </form>
+                </div>
+              </div>
               {% endfor %}
-            </ul>
-          </form>
+            </div>
+          </div>
         </div>
+
+        <!-- 仕掛かり中のタスク -->
+        <div class="col">
+          <h2 class="text-center">仕掛かり中</h2>
+          <div class="task-container">
+            <div class="row">
+              {% for task in in_progress_tasks %}
+              <div class="col-12">
+                <div
+                  class="d-flex align-items-center justify-content-between border p-1 rounded"
+                  style="margin-bottom: 0"
+                >
+                  <div class="flex-grow-1">{{ task.task }}</div>
+                  <form class="d-flex gap-2 mb-0">
+                    <input type="hidden" id="id" value="{{ task.id }}" />
+                    <button
+                      type="button"
+                      id="undo-{{ task.id }}"
+                      class="btn btn-secondary"
+                    >
+                      戻す
+                    </button>
+                    <button
+                      type="button"
+                      id="done-{{ task.id }}"
+                      class="btn btn-success"
+                    >
+                      完了
+                    </button>
+                  </form>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
         <!-- 完了タスク -->
-        <div class="task-column">
-          <h2>完了</h2>
-          <ul>
-            {% for task in completed_tasks %}
-            <li>
-              <span>{{ task.task }}</span>
-            </li>
-            {% endfor %}
-          </ul>
+        <div class="col">
+          <h2 class="text-center">完了</h2>
+          <div class="task-container">
+            <div class="row">
+              {% for task in completed_tasks %}
+              <div class="col-12">
+                <div
+                  class="d-flex align-items-center justify-content-between border p-1 rounded"
+                  style="margin-bottom: 0"
+                >
+                  <div class="flex-grow-1">{{ task.task }}</div>
+                  <form class="d-flex gap-2 mb-0">
+                    <input type="hidden" id="id" value="{{ task.id }}" />
+                    <button
+                      type="button"
+                      id="doing-{{ task.id }}"
+                      class="btn btn-secondary"
+                    >
+                      戻す
+                    </button>
+                  </form>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
       crossorigin="anonymous"
     ></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="/static/js/main.js"></script>
   </body>
 </html>
