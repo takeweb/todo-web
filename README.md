@@ -1,21 +1,5 @@
 # 『バックエンドエンジニアを目指す人のためのRust』 第10章 TODO Webアプリ
 
-# 環境構築
-## プロジェクトの作成
-```
-cargo new todo-web
-```
-
-## 各外部クレートの導入
-```
-cargo add actix-web
-cargo add askama
-cargo add askama_actix
-cargo add sqlx --features sqlite,runtime-tokio migration
-cargo add serde --features derive
-cargo add dotenv
-```
-
 ## 機能改善
 * [x] hello機能を削除
 * [x] SQLiteはインメモリーではなく、ファイルに保存
@@ -33,16 +17,52 @@ cargo add dotenv
 * [x] ステータスを「完了(Done)」から「仕掛かり中(In progress)」に戻す機能
 * [x] ステータスが「完了(Done)」になったタイミングで、「完了日」を現在日時で更新
 * [x] UIにBootstrap 5の導入
+* [x] UIでタスク追加時に期限を設定できるようにする
+* [x] タスク毎に期限を管理可能とする
+* [x] 期限のデフォルト値を.envから取得するようにする
 * [ ] DATETIME型はUTCで保存される為、表示する際は＋9時間する必要がある
 * [ ] 一覧画面の実装
-* [ ] UIでタスク追加時に期限を設定できるようにする
 * [ ] [ctrl + c]で終了すると、*.db-shmや*.db-walが残るのをどうにかしたい
 * [ ] UIでタスクをドラッグで範囲に移動することで、ステータス変更を可能とする
 * [ ] 親タスク、子タスクの管理を可能とする
 * [ ] タスク全体をプロジェクトとして、独立管理可能とする
 * [ ] プロジェクトに名前を保持できるようにする
 * [ ] プロジェクト毎に参照可能ユーザを設定可能とする
-* [ ] タスク毎に期限を管理可能とする
+* [ ]
+
+
+# 環境構築
+## プロジェクトの作成
+```
+cargo new todo-web
+```
+
+## 各外部クレートの導入
+```
+cargo add actix-web
+cargo add askama
+cargo add askama_actix
+cargo add sqlx --features sqlite,runtime-tokio migration
+cargo add serde --features derive
+cargo add dotenv
+```
+
+## sqlx-cliのインストール ※インストールされていない場合
+```
+cargo install sqlx-cli --no-default-features --features sqlite
+# 今回はこっち
+cargo install sqlx-cli
+```
+
+## データベースファイルを作成 ※dbファイルが存在しない場合
+```
+sqlx database create --database-url "sqlite:./db/database.db"
+```
+
+## マイグレーションを適用 ※マイグレーションが実行されていない場合
+```
+sqlx migrate run
+``
 
 #　使い方
 ## 起動
