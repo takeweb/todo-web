@@ -1,7 +1,7 @@
 use actix_web::{get, post, web, HttpResponse};
 use askama::Template;
 use askama_actix::TemplateToResponse;
-use chrono::{Duration, Utc};
+use chrono::{Duration, Local};
 use sqlx::{Pool, Row, Sqlite, SqlitePool};
 use std::env;
 
@@ -100,7 +100,7 @@ pub async fn create(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpR
         Some(task_value) if !task_value.is_empty() => {
             // due_atのデフォルト値を外部設定値を使って計算
             let due_at_value = task.due_at.unwrap_or_else(|| {
-                (Utc::now() + Duration::days(default_due_days))
+                (Local::now() + Duration::days(default_due_days))
                     .format("%Y-%m-%d %H:%M:%S")
                     .to_string()
             });
@@ -125,7 +125,7 @@ pub async fn start(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRe
 
     // 開始ボタン押下時
     if let Some(id) = task.id {
-        sqlx::query("UPDATE tasks SET status = 1, started_at = CURRENT_TIMESTAMP WHERE id = ?")
+        sqlx::query("UPDATE tasks SET status = 1, started_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?")
             .bind(id)
             .execute(pool.as_ref())
             .await
@@ -143,7 +143,7 @@ pub async fn done(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRes
 
     // 完了ボタン押下時
     if let Some(id) = task.id {
-        sqlx::query("UPDATE tasks SET status = 9, done_at = CURRENT_TIMESTAMP WHERE id = ?")
+        sqlx::query("UPDATE tasks SET status = 9, done_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?")
             .bind(id)
             .execute(pool.as_ref())
             .await
@@ -161,7 +161,7 @@ pub async fn undo(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRes
 
     // 戻す(仕掛かり中→未着手)ボタン押下時
     if let Some(id) = task.id {
-        sqlx::query("UPDATE tasks SET status = 0, started_at = CURRENT_TIMESTAMP WHERE id = ?")
+        sqlx::query("UPDATE tasks SET status = 0, started_at = NULL WHERE id = ?")
             .bind(id)
             .execute(pool.as_ref())
             .await
