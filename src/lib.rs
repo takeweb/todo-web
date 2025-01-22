@@ -2,8 +2,10 @@ use actix_web::{get, post, web, HttpResponse};
 use askama::Template;
 use askama_actix::TemplateToResponse;
 use chrono::{Duration, Local};
-use sqlx::{Pool, Row, Sqlite, SqlitePool};
+use db::TaskRegisterd;
+use sqlx::{Pool, Sqlite, SqlitePool};
 use std::env;
+pub mod db;
 
 #[derive(Template)]
 #[template(path = "todo.html")]
@@ -20,12 +22,6 @@ struct Task {
     due_at: Option<String>,
 }
 
-#[derive(serde::Deserialize)]
-struct TaskRegisterd {
-    id: i32,
-    task: String,
-}
-
 pub async fn init_db_pool() -> Pool<Sqlite> {
     // .envの読み込み
     dotenv::dotenv().expect(".envの読み込み失敗");
@@ -40,43 +36,13 @@ pub async fn init_db_pool() -> Pool<Sqlite> {
 #[get("/")]
 pub async fn todo(pool: web::Data<SqlitePool>) -> HttpResponse {
     // 未着手のタスクを取得
-    let unstarted_rows = sqlx::query("SELECT id, task FROM tasks WHERE status = 0 ORDER BY id;")
-        .fetch_all(pool.as_ref())
-        .await
-        .unwrap();
-    let unstarted_tasks: Vec<TaskRegisterd> = unstarted_rows
-        .iter()
-        .map(|row| TaskRegisterd {
-            id: row.get::<i32, _>("id"),
-            task: row.get::<String, _>("task"),
-        })
-        .collect();
+    let unstarted_tasks = db::get_task_list(&pool, 0).await;
 
     // 仕掛かり中のタスクを取得
-    let in_progress_rows = sqlx::query("SELECT id, task FROM tasks WHERE status = 1 ORDER BY id;")
-        .fetch_all(pool.as_ref())
-        .await
-        .unwrap();
-    let in_progress_tasks: Vec<TaskRegisterd> = in_progress_rows
-        .iter()
-        .map(|row| TaskRegisterd {
-            id: row.get::<i32, _>("id"),
-            task: row.get::<String, _>("task"),
-        })
-        .collect();
+    let in_progress_tasks = db::get_task_list(&pool, 1).await;
 
     // 完了タスクを取得
-    let completed_rows = sqlx::query("SELECT id, task FROM tasks WHERE status = 9 ORDER BY id;")
-        .fetch_all(pool.as_ref())
-        .await
-        .unwrap();
-    let completed_tasks: Vec<TaskRegisterd> = completed_rows
-        .iter()
-        .map(|row| TaskRegisterd {
-            id: row.get::<i32, _>("id"),
-            task: row.get::<String, _>("task"),
-        })
-        .collect();
+    let completed_tasks = db::get_task_list(&pool, 9).await;
 
     let todo = TodoTemplate {
         unstarted_tasks,
@@ -104,12 +70,7 @@ pub async fn create(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpR
                     .format("%Y-%m-%d %H:%M:%S")
                     .to_string()
             });
-            sqlx::query("INSERT INTO tasks (task, status, due_at) VALUES (?, 0, ?)")
-                .bind(task_value)
-                .bind(due_at_value)
-                .execute(pool.as_ref())
-                .await
-                .unwrap();
+            db::add_task(&pool, task_value, due_at_value).await;
         }
         _ => {}
     }
@@ -125,11 +86,7 @@ pub async fn start(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRe
 
     // 開始ボタン押下時
     if let Some(id) = task.id {
-        sqlx::query("UPDATE tasks SET status = 1, started_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?")
-            .bind(id)
-            .execute(pool.as_ref())
-            .await
-            .unwrap();
+        db::start_task(&pool, id).await;
     }
 
     HttpResponse::Found()
@@ -143,11 +100,7 @@ pub async fn done(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRes
 
     // 完了ボタン押下時
     if let Some(id) = task.id {
-        sqlx::query("UPDATE tasks SET status = 9, done_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?")
-            .bind(id)
-            .execute(pool.as_ref())
-            .await
-            .unwrap();
+        db::done_task(&pool, id).await;
     }
 
     HttpResponse::Found()
@@ -161,11 +114,7 @@ pub async fn undo(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRes
 
     // 戻す(仕掛かり中→未着手)ボタン押下時
     if let Some(id) = task.id {
-        sqlx::query("UPDATE tasks SET status = 0, started_at = NULL WHERE id = ?")
-            .bind(id)
-            .execute(pool.as_ref())
-            .await
-            .unwrap();
+        db::undo_task(&pool, id).await;
     }
 
     HttpResponse::Found()
@@ -179,11 +128,7 @@ pub async fn doing(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRe
 
     // 戻す(完了→仕掛かり中)ボタン押下時
     if let Some(id) = task.id {
-        sqlx::query("UPDATE tasks SET status = 1, done_at = NULL WHERE id = ?")
-            .bind(id)
-            .execute(pool.as_ref())
-            .await
-            .unwrap();
+        db::doing_task(&pool, id).await;
     }
 
     HttpResponse::Found()
@@ -197,11 +142,7 @@ pub async fn delete(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpR
 
     // 削除ボタン押下時
     if let Some(id) = task.id {
-        sqlx::query("DELETE FROM tasks WHERE id = ?")
-            .bind(id)
-            .execute(pool.as_ref())
-            .await
-            .unwrap();
+        db::remove_task(&pool, id).await;
     }
 
     HttpResponse::Found()
