@@ -50,17 +50,6 @@ body {
     padding: 10px;
 }
 
-h2 {
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 1;
-    padding-top: 12px;
-    padding-bottom: 12px;
-    margin-bottom: 0;
-    border-bottom: 1px solid #ddd;
-}
-
 /* タスクアイテム */
 .task-item {
     display: flex;
