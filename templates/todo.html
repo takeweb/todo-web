@@ -30,7 +30,8 @@
           <h1>TODO</h1>
         </div>
       </div>
-      <div class="row">
+      <!-- 新しいタスク作成フォーム -->
+      <div class="row new-task-form">
         <div class="col">
           <form action="/create" method="post">
             <div class="form-group d-flex">
@@ -62,105 +63,97 @@
           </form>
         </div>
       </div>
+      <!-- タスク一覧 -->
       <div class="row">
         <!-- 未着手タスク -->
         <div class="col">
-          <h2 class="text-center">未着手</h2>
-          <div class="task-container">
-            <div class="row">
+          <div class="card task-card">
+            <div class="card-header text-center">未着手</div>
+            <ul class="list-group list-group-flush">
               {% for task in unstarted_tasks %}
-              <div class="col-12">
-                <div
-                  class="d-flex align-items-center justify-content-between border p-1 rounded"
-                  style="margin-bottom: 0"
-                >
-                  <div class="flex-grow-1">{{ task.task }}</div>
-                  <form class="d-flex gap-2 mb-0">
-                    <input type="hidden" id="id" value="{{ task.id }}" />
-                    <button
-                      type="button"
-                      id="delete-{{ task.id }}"
-                      class="btn btn-secondary"
-                    >
-                      削除
-                    </button>
-                    <button
-                      type="button"
-                      id="start-{{ task.id }}"
-                      class="btn btn-primary"
-                    >
-                      開始
-                    </button>
-                  </form>
-                </div>
-              </div>
+              <li
+                class="list-group-item d-flex justify-content-between align-items-center"
+              >
+                <span>{{ task.task }}</span>
+                <form class="d-flex gap-2">
+                  <input type="hidden" id="id" value="{{ task.id }}" />
+                  <button
+                    type="button"
+                    id="delete-{{ task.id }}"
+                    class="btn btn-secondary btn-sm"
+                  >
+                    削除
+                  </button>
+                  <button
+                    type="button"
+                    id="start-{{ task.id }}"
+                    class="btn btn-primary btn-sm"
+                  >
+                    開始
+                  </button>
+                </form>
+              </li>
               {% endfor %}
-            </div>
+            </ul>
           </div>
         </div>
 
         <!-- 仕掛かり中のタスク -->
         <div class="col">
-          <h2 class="text-center">仕掛かり中</h2>
-          <div class="task-container">
-            <div class="row">
+          <div class="card task-card">
+            <div class="card-header text-center">仕掛かり中</div>
+            <ul class="list-group list-group-flush">
               {% for task in in_progress_tasks %}
-              <div class="col-12">
-                <div
-                  class="d-flex align-items-center justify-content-between border p-1 rounded"
-                  style="margin-bottom: 0"
-                >
-                  <div class="flex-grow-1">{{ task.task }}</div>
-                  <form class="d-flex gap-2 mb-0">
-                    <input type="hidden" id="id" value="{{ task.id }}" />
-                    <button
-                      type="button"
-                      id="undo-{{ task.id }}"
-                      class="btn btn-secondary"
-                    >
-                      戻す
-                    </button>
-                    <button
-                      type="button"
-                      id="done-{{ task.id }}"
-                      class="btn btn-success"
-                    >
-                      完了
-                    </button>
-                  </form>
-                </div>
-              </div>
+              <li
+                class="list-group-item d-flex justify-content-between align-items-center"
+              >
+                <span>{{ task.task }}</span>
+                <form class="d-flex gap-2">
+                  <input type="hidden" id="id" value="{{ task.id }}" />
+                  <button
+                    type="button"
+                    id="undo-{{ task.id }}"
+                    class="btn btn-secondary btn-sm"
+                  >
+                    戻す
+                  </button>
+                  <button
+                    type="button"
+                    id="done-{{ task.id }}"
+                    class="btn btn-success btn-sm"
+                  >
+                    完了
+                  </button>
+                </form>
+              </li>
               {% endfor %}
-            </div>
+            </ul>
           </div>
         </div>
 
         <!-- 完了タスク -->
         <div class="col">
-          <h2 class="text-center">完了</h2>
-          <div class="task-container">
-            <div class="row">
+          <div class="card task-card">
+            <div class="card-header text-center">完了</div>
+            <ul class="list-group list-group-flush">
               {% for task in completed_tasks %}
-              <div class="col-12">
-                <div
-                  class="d-flex align-items-center justify-content-between border p-1 rounded"
-                  style="margin-bottom: 0"
-                >
-                  <div class="flex-grow-1">{{ task.task }}</div>
-                  <form class="d-flex gap-2 mb-0">
-                    <input type="hidden" id="id" value="{{ task.id }}" />
-                    <button
-                      type="button"
-                      id="doing-{{ task.id }}"
-                      class="btn btn-secondary"
-                    >
-                      戻す
-                    </button>
-                  </form>
-                </div>
-              </div>
+              <li
+                class="list-group-item d-flex justify-content-between align-items-center"
+              >
+                <span>{{ task.task }}</span>
+                <form class="d-flex gap-2">
+                  <input type="hidden" id="id" value="{{ task.id }}" />
+                  <button
+                    type="button"
+                    id="doing-{{ task.id }}"
+                    class="btn btn-secondary btn-sm"
+                  >
+                    戻す
+                  </button>
+                </form>
+              </li>
               {% endfor %}
-            </div>
+            </ul>
           </div>
         </div>
       </div>
