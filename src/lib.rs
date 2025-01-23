@@ -22,6 +22,19 @@ struct Task {
     due_at: Option<String>,
 }
 
+#[derive(Debug, PartialEq, Eq, sqlx::Type)]
+#[repr(i32)]
+pub enum TaskStatus {
+    NotStarted = 0, // 未着手
+    InProgress = 1, // 仕掛かり中
+    Completed = 9,  // 完了
+}
+impl From<TaskStatus> for i32 {
+    fn from(status: TaskStatus) -> Self {
+        status as i32
+    }
+}
+
 pub async fn init_db_pool() -> Pool<Sqlite> {
     // .envの読み込み
     dotenv::dotenv().expect(".envの読み込み失敗");
@@ -36,13 +49,13 @@ pub async fn init_db_pool() -> Pool<Sqlite> {
 #[get("/")]
 pub async fn todo(pool: web::Data<SqlitePool>) -> HttpResponse {
     // 未着手のタスクを取得
-    let unstarted_tasks = db::get_task_list(&pool, 0).await;
+    let unstarted_tasks = db::get_task_list(&pool, TaskStatus::NotStarted.into()).await;
 
     // 仕掛かり中のタスクを取得
-    let in_progress_tasks = db::get_task_list(&pool, 1).await;
+    let in_progress_tasks = db::get_task_list(&pool, TaskStatus::InProgress.into()).await;
 
     // 完了タスクを取得
-    let completed_tasks = db::get_task_list(&pool, 9).await;
+    let completed_tasks = db::get_task_list(&pool, TaskStatus::Completed.into()).await;
 
     let todo = TodoTemplate {
         unstarted_tasks,
@@ -70,7 +83,13 @@ pub async fn create(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpR
                     .format("%Y-%m-%d %H:%M:%S")
                     .to_string()
             });
-            db::add_task(&pool, task_value, due_at_value).await;
+            db::add_task(
+                &pool,
+                task_value,
+                TaskStatus::NotStarted.into(),
+                due_at_value,
+            )
+            .await;
         }
         _ => {}
     }
@@ -86,7 +105,7 @@ pub async fn start(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRe
 
     // 開始ボタン押下時
     if let Some(id) = task.id {
-        db::start_task(&pool, id).await;
+        db::start_task(&pool, id, TaskStatus::InProgress.into()).await;
     }
 
     HttpResponse::Found()
@@ -100,7 +119,7 @@ pub async fn done(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRes
 
     // 完了ボタン押下時
     if let Some(id) = task.id {
-        db::done_task(&pool, id).await;
+        db::done_task(&pool, id, TaskStatus::Completed.into()).await;
     }
 
     HttpResponse::Found()
@@ -114,7 +133,7 @@ pub async fn undo(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRes
 
     // 戻す(仕掛かり中→未着手)ボタン押下時
     if let Some(id) = task.id {
-        db::undo_task(&pool, id).await;
+        db::undo_task(&pool, id, TaskStatus::NotStarted.into()).await;
     }
 
     HttpResponse::Found()
@@ -128,7 +147,7 @@ pub async fn doing(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRe
 
     // 戻す(完了→仕掛かり中)ボタン押下時
     if let Some(id) = task.id {
-        db::doing_task(&pool, id).await;
+        db::doing_task(&pool, id, TaskStatus::InProgress.into()).await;
     }
 
     HttpResponse::Found()
