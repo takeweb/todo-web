@@ -1,10 +1,16 @@
 use actix_web::web;
-use sqlx::{sqlite::SqliteQueryResult, Row, SqlitePool};
+use sqlx::SqlitePool;
+use sqlx::{sqlite::SqliteQueryResult, Pool, Row, Sqlite};
 
 #[derive(serde::Deserialize)]
 pub struct TaskRegisterd {
     pub id: i32,
     pub task: String,
+}
+
+pub async fn init_db_pool(database_url: &str) -> Pool<Sqlite> {
+    // 接続プールの作成
+    SqlitePool::connect(database_url).await.unwrap()
 }
 
 pub async fn get_task_list(pool: &web::Data<SqlitePool>, status: i32) -> Vec<TaskRegisterd> {

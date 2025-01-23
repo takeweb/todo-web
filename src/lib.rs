@@ -43,7 +43,7 @@ pub async fn init_db_pool() -> Pool<Sqlite> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URLがセットされていません");
 
     // 接続プールの作成
-    SqlitePool::connect(&database_url).await.unwrap()
+    db::init_db_pool(&database_url).await
 }
 
 #[get("/")]
