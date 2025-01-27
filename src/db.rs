@@ -4,8 +4,12 @@ use sqlx::{sqlite::SqliteQueryResult, Pool, Row, Sqlite};
 
 #[derive(serde::Deserialize)]
 pub struct TaskRegisterd {
-    pub id: i32,
+    pub id: i64,
     pub task: String,
+    pub created_at: Option<String>,
+    pub due_at: Option<String>,
+    pub started_at: Option<String>,
+    pub done_at: Option<String>,
 }
 
 pub async fn init_db_pool(database_url: &str) -> Pool<Sqlite> {
@@ -14,7 +18,7 @@ pub async fn init_db_pool(database_url: &str) -> Pool<Sqlite> {
 }
 
 pub async fn get_task_list(pool: &web::Data<SqlitePool>, status: i32) -> Vec<TaskRegisterd> {
-    let sql = "SELECT id, task FROM tasks WHERE status = ? ORDER BY id;";
+    let sql = "SELECT id, task, created_at, due_at, started_at, done_at FROM tasks WHERE status = ? ORDER BY id;";
     let rows = sqlx::query(sql)
         .bind(status)
         .fetch_all(pool.as_ref())
@@ -23,49 +27,55 @@ pub async fn get_task_list(pool: &web::Data<SqlitePool>, status: i32) -> Vec<Tas
     let tasks: Vec<TaskRegisterd> = rows
         .iter()
         .map(|row| TaskRegisterd {
-            id: row.get::<i32, _>("id"),
+            id: row.get::<i64, _>("id"),
             task: row.get::<String, _>("task"),
+            created_at: Some(row.get::<String, _>("created_at")),
+            due_at: Some(row.get::<String, _>("due_at")),
+            started_at: Some(row.get::<String, _>("started_at")),
+            done_at: Some(row.get::<String, _>("done_at")),
         })
         .collect();
     tasks
 }
 
 pub async fn add_task(
-    pool: &web::Data<SqlitePool>,
+    pool: &SqlitePool,
     task_value: String,
     status: i32,
     due_at_value: String,
-) -> SqliteQueryResult {
-    let sql = "INSERT INTO tasks (task, status, due_at) VALUES (?, ?, ?)";
-    sqlx::query(sql)
+) -> Result<i64, sqlx::Error> {
+    // SQL文の実行
+    sqlx::query("INSERT INTO tasks (task, status, due_at) VALUES (?, ?, ?)")
         .bind(task_value)
         .bind(status)
         .bind(due_at_value)
-        .execute(pool.as_ref())
-        .await
-        .unwrap()
+        .execute(pool)
+        .await?;
+
+    // last_insert_rowidを取得
+    let id = sqlx::query_scalar("SELECT last_insert_rowid()")
+        .fetch_one(pool)
+        .await?;
+
+    Ok(id)
 }
 
-pub async fn start_task(
-    pool: &web::Data<SqlitePool>,
-    id: String,
-    status: i32,
-) -> SqliteQueryResult {
+pub async fn start_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQueryResult {
     let sql = "UPDATE tasks SET status = ?, started_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?";
     sqlx::query(sql)
         .bind(status)
         .bind(id)
-        .execute(pool.as_ref())
+        .execute(pool)
         .await
         .unwrap()
 }
 
-pub async fn done_task(pool: &web::Data<SqlitePool>, id: String, status: i32) -> SqliteQueryResult {
+pub async fn done_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQueryResult {
     let sql = "UPDATE tasks SET status = ?, done_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?";
     sqlx::query(sql)
         .bind(status)
         .bind(id)
-        .execute(pool.as_ref())
+        .execute(pool)
         .await
         .unwrap()
 }
@@ -87,35 +97,27 @@ pub async fn done_task(pool: &web::Data<SqlitePool>, id: String, status: i32) ->
 ///
 /// Note: This function is intended to be used within an Actix Web application,
 /// where the `SqlitePool` is properly configured and managed by the framework.
-pub async fn undo_task(pool: &web::Data<SqlitePool>, id: String, status: i32) -> SqliteQueryResult {
+pub async fn undo_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQueryResult {
     let sql = "UPDATE tasks SET status = ?, started_at = NULL WHERE id = ?";
     sqlx::query(sql)
         .bind(status)
         .bind(id)
-        .execute(pool.as_ref())
+        .execute(pool)
         .await
         .unwrap()
 }
 
-pub async fn doing_task(
-    pool: &web::Data<SqlitePool>,
-    id: String,
-    status: i32,
-) -> SqliteQueryResult {
+pub async fn doing_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQueryResult {
     let sql = "UPDATE tasks SET status = ?, done_at = NULL WHERE id = ?";
     sqlx::query(sql)
         .bind(status)
         .bind(id)
-        .execute(pool.as_ref())
+        .execute(pool)
         .await
         .unwrap()
 }
 
-pub async fn remove_task(pool: &web::Data<SqlitePool>, id: String) -> SqliteQueryResult {
+pub async fn remove_task(pool: &SqlitePool, id: String) -> SqliteQueryResult {
     let sql = "DELETE FROM tasks WHERE id = ?";
-    sqlx::query(sql)
-        .bind(id)
-        .execute(pool.as_ref())
-        .await
-        .unwrap()
+    sqlx::query(sql).bind(id).execute(pool).await.unwrap()
 }

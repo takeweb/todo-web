@@ -7,6 +7,13 @@ use sqlx::{Pool, Sqlite, SqlitePool};
 use std::env;
 pub mod db;
 
+#[derive(serde::Deserialize)]
+struct Task {
+    id: Option<String>,
+    task: Option<String>,
+    due_at: Option<String>,
+}
+
 #[derive(Template)]
 #[template(path = "todo.html")]
 struct TodoTemplate {
@@ -15,16 +22,9 @@ struct TodoTemplate {
     completed_tasks: Vec<TaskRegisterd>,
 }
 
-#[derive(serde::Deserialize)]
-struct Task {
-    id: Option<String>,
-    task: Option<String>,
-    due_at: Option<String>,
-}
-
 #[derive(Debug, PartialEq, Eq, sqlx::Type)]
 #[repr(i32)]
-pub enum TaskStatus {
+enum TaskStatus {
     NotStarted = 0, // 未着手
     InProgress = 1, // 仕掛かり中
     Completed = 9,  // 完了
@@ -83,8 +83,8 @@ pub async fn create(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpR
                     .format("%Y-%m-%d %H:%M:%S")
                     .to_string()
             });
-            db::add_task(
-                &pool,
+            let _id = db::add_task(
+                pool.as_ref(),
                 task_value,
                 TaskStatus::NotStarted.into(),
                 due_at_value,
@@ -105,7 +105,7 @@ pub async fn start(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRe
 
     // 開始ボタン押下時
     if let Some(id) = task.id {
-        db::start_task(&pool, id, TaskStatus::InProgress.into()).await;
+        db::start_task(pool.as_ref(), id, TaskStatus::InProgress.into()).await;
     }
 
     HttpResponse::Found()
