@@ -334,6 +334,33 @@ mod tests {
     async fn test_get_task_list_unstarted() {
         let pool = setup_test_db().await;
 
+        // タスクを追加
+        add_task(
+            &pool,
+            "test_task001".to_string(),
+            "2025-02-23T00:00:00Z".to_string(),
+        )
+        .await
+        .unwrap();
+
+        // 未着手のタスクを取得
+        let unstarted_tasks = get_task_list(&pool, 0).await;
+        let unstarted_task = unstarted_tasks.first().unwrap();
+        // println!("Task found: {:?}", unstarted_tasks);
+
+        // 結果検証
+        assert_eq!(unstarted_task.task, "test_task001".to_string()); // タスク
+        assert_eq!(unstarted_task.status, 0); // ステータスが未着手
+        assert!(unstarted_task.created_at.is_some()); // created_atはNULL以外
+        assert!(unstarted_task.due_at.is_some()); // due_atはNULL以外
+        assert!(unstarted_task.started_at.is_none()); // started_atはNULL
+        assert!(unstarted_task.done_at.is_none()); // done_atはNULL
+    }
+
+    #[tokio::test]
+    async fn test_get_task_list_in_progress() {
+        let pool = setup_test_db().await;
+
         // 関数を呼び出して、タスクを追加
         add_task(
             &pool,
@@ -360,30 +387,60 @@ mod tests {
         .unwrap();
 
         // タスクを開始
-        start_task(&pool, 2).await;
-        start_task(&pool, 3).await;
+        start_task(&pool, 1).await;
+        // start_task(&pool, 2).await;
+        // start_task(&pool, 3).await;
 
         // タスクを終了
-        done_task(&pool, 3).await;
+        // done_task(&pool, 3).await;
 
-        // 未着手のタスクを取得
-        let unstarted_tasks = get_task_list(&pool, 0).await;
-        let unstarted_task = unstarted_tasks.first().unwrap();
-
-        // // 仕掛かり中のタスクを取得
-        // let in_progress_tasks = get_task_list(&pool, 1).await;
+        // 仕掛かり中のタスクを取得
+        let in_progress_tasks = get_task_list(&pool, 1).await;
+        let in_progress_task = in_progress_tasks.first().unwrap();
+        println!("Task found: {:?}", in_progress_tasks);
 
         // // 完了タスクを取得
         // let completed_tasks = get_task_list(&pool, 9).await;
 
-        println!("Task found: {:?}", unstarted_tasks);
+        // 結果検証
+        assert_eq!(in_progress_task.task, "test_task001".to_string()); // タスク
+        assert_eq!(in_progress_task.status, 1); // ステータスが仕掛かり中
+        assert!(in_progress_task.created_at.is_some()); // created_atはNULL以外
+        assert!(in_progress_task.due_at.is_some()); // due_atはNULL以外
+        assert!(in_progress_task.started_at.is_some()); // started_atはNULL以外
+        assert!(in_progress_task.done_at.is_none()); // done_atはNULL
+    }
+
+    #[tokio::test]
+    async fn test_get_task_list_in_completed() {
+        let pool = setup_test_db().await;
+
+        // 関数を呼び出して、タスクを追加
+        add_task(
+            &pool,
+            "test_task001".to_string(),
+            "2025-02-23T00:00:00Z".to_string(),
+        )
+        .await
+        .unwrap();
+
+        // タスクを開始
+        start_task(&pool, 1).await;
+
+        // タスクを終了
+        done_task(&pool, 1).await;
+
+        // // 完了タスクを取得
+        let completed_tasks = get_task_list(&pool, 9).await;
+        let completed_task = completed_tasks.first().unwrap();
+        println!("Task found: {:?}", completed_tasks);
 
         // 結果検証
-        assert_eq!(unstarted_task.task, "test_task001".to_string()); // タスク
-        assert_eq!(unstarted_task.status, 0); // ステータスが未着手
-        assert!(unstarted_task.created_at.is_some()); // created_atはNULL以外
-        assert!(unstarted_task.due_at.is_some()); // due_atはNULL以外
-        assert!(unstarted_task.started_at.is_none()); // started_atはNULL
-        assert!(unstarted_task.done_at.is_none()); // done_atはNULL
+        assert_eq!(completed_task.task, "test_task001".to_string()); // タスク
+        assert_eq!(completed_task.status, 9); // ステータスが完了
+        assert!(completed_task.created_at.is_some()); // created_atはNULL以外
+        assert!(completed_task.due_at.is_some()); // due_atはNULL以外
+        assert!(completed_task.started_at.is_some()); // started_atはNULL以外
+        assert!(completed_task.done_at.is_some()); // done_atはNULL
     }
 }
