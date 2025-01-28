@@ -1,5 +1,4 @@
-use sqlx::SqlitePool;
-use sqlx::{sqlite::SqliteQueryResult, Pool, Row, Sqlite};
+use sqlx::{sqlite::SqliteQueryResult, Pool, Row, Sqlite, SqlitePool};
 
 #[derive(serde::Deserialize, Debug)]
 pub struct TaskRegisterd {
@@ -18,8 +17,8 @@ pub async fn init_db_pool(database_url: &str) -> Pool<Sqlite> {
 }
 
 pub async fn get_task_list(pool: &SqlitePool, status: i32) -> Vec<TaskRegisterd> {
-    let sql = "SELECT id, task, status, created_at, due_at, started_at, done_at FROM tasks WHERE status = ? ORDER BY id;";
-    let rows = sqlx::query(sql).bind(status).fetch_all(pool).await.unwrap();
+    const SQL: &str = include_str!("sql/get_task_list.sql");
+    let rows = sqlx::query(SQL).bind(status).fetch_all(pool).await.unwrap();
     let tasks: Vec<TaskRegisterd> = rows
         .iter()
         .map(|row| TaskRegisterd {
@@ -44,8 +43,8 @@ pub async fn add_task(
     task_value: String,
     due_at_value: String,
 ) -> Result<i64, sqlx::Error> {
-    // SQL文の実行
-    sqlx::query("INSERT INTO tasks (task, status, due_at) VALUES (?, 0, ?)")
+    const SQL: &str = include_str!("sql/add_task.sql");
+    sqlx::query(SQL)
         .bind(task_value)
         .bind(due_at_value)
         .execute(pool)
@@ -60,13 +59,13 @@ pub async fn add_task(
 }
 
 pub async fn start_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
-    let sql = "UPDATE tasks SET status = 1, started_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?";
-    sqlx::query(sql).bind(id).execute(pool).await.unwrap()
+    const SQL: &str = include_str!("sql/start_task.sql");
+    sqlx::query(SQL).bind(id).execute(pool).await.unwrap()
 }
 
 pub async fn done_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
-    let sql = "UPDATE tasks SET status = 9, done_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?";
-    sqlx::query(sql).bind(id).execute(pool).await.unwrap()
+    const SQL: &str = include_str!("sql/done_task.sql");
+    sqlx::query(SQL).bind(id).execute(pool).await.unwrap()
 }
 
 /// Reverts the status of a task to "not started".
@@ -87,29 +86,23 @@ pub async fn done_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
 /// Note: This function is intended to be used within an Actix Web application,
 /// where the `SqlitePool` is properly configured and managed by the framework.
 pub async fn undo_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
-    let sql = "UPDATE tasks SET status = 0, started_at = NULL WHERE id = ?";
-    sqlx::query(sql).bind(id).execute(pool).await.unwrap()
+    const SQL: &str = include_str!("sql/undo_task.sql");
+    sqlx::query(SQL).bind(id).execute(pool).await.unwrap()
 }
 
 pub async fn doing_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
-    let sql = "UPDATE tasks SET status = 1, done_at = NULL WHERE id = ?";
-    sqlx::query(sql).bind(id).execute(pool).await.unwrap()
+    const SQL: &str = include_str!("sql/doing_task.sql");
+    sqlx::query(SQL).bind(id).execute(pool).await.unwrap()
 }
 
 pub async fn remove_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
-    let sql = "DELETE FROM tasks WHERE id = ?";
-    sqlx::query(sql).bind(id).execute(pool).await.unwrap()
+    const SQL: &str = include_str!("sql/remove_task.sql");
+    sqlx::query(SQL).bind(id).execute(pool).await.unwrap()
 }
 
 pub async fn get_task(pool: &SqlitePool, id: i64) -> Result<TaskRegisterd, sqlx::Error> {
-    let sql = r#"
-        SELECT
-            id, task, status, created_at, due_at, started_at, done_at
-        FROM tasks
-        WHERE id = ?;
-    "#;
-
-    let row = sqlx::query(sql).bind(id).fetch_one(pool).await?;
+    const SQL: &str = include_str!("sql/get_task.sql");
+    let row = sqlx::query(SQL).bind(id).fetch_one(pool).await?;
 
     // TaskRegisterd構造体に変換
     let task = TaskRegisterd {
@@ -167,8 +160,6 @@ mod tests {
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
         // println!("Task found: {:?}", result);
-        // let results = get_task_list(&pool, 0).await;
-        // println!("Task found: {:?}", results);
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -197,7 +188,6 @@ mod tests {
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
-        // println!("Task found: {:?}", result);
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -229,7 +219,6 @@ mod tests {
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
-        // println!("Task found: {:?}", result);
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -261,7 +250,6 @@ mod tests {
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
-        // println!("Task found: {:?}", result);
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -296,7 +284,6 @@ mod tests {
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
-        // println!("Task found: {:?}", result);
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -346,7 +333,6 @@ mod tests {
         // 未着手のタスクを取得
         let unstarted_tasks = get_task_list(&pool, 0).await;
         let unstarted_task = unstarted_tasks.first().unwrap();
-        // println!("Task found: {:?}", unstarted_tasks);
 
         // 結果検証
         assert_eq!(unstarted_task.task, "test_task001".to_string()); // タスク
@@ -388,19 +374,10 @@ mod tests {
 
         // タスクを開始
         start_task(&pool, 1).await;
-        // start_task(&pool, 2).await;
-        // start_task(&pool, 3).await;
-
-        // タスクを終了
-        // done_task(&pool, 3).await;
 
         // 仕掛かり中のタスクを取得
         let in_progress_tasks = get_task_list(&pool, 1).await;
         let in_progress_task = in_progress_tasks.first().unwrap();
-        println!("Task found: {:?}", in_progress_tasks);
-
-        // // 完了タスクを取得
-        // let completed_tasks = get_task_list(&pool, 9).await;
 
         // 結果検証
         assert_eq!(in_progress_task.task, "test_task001".to_string()); // タスク
@@ -433,7 +410,6 @@ mod tests {
         // // 完了タスクを取得
         let completed_tasks = get_task_list(&pool, 9).await;
         let completed_task = completed_tasks.first().unwrap();
-        println!("Task found: {:?}", completed_tasks);
 
         // 結果検証
         assert_eq!(completed_task.task, "test_task001".to_string()); // タスク
