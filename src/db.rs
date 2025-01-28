@@ -38,13 +38,11 @@ pub async fn get_task_list(pool: &SqlitePool, status: i32) -> Vec<TaskRegisterd>
 pub async fn add_task(
     pool: &SqlitePool,
     task_value: String,
-    status: i32,
     due_at_value: String,
 ) -> Result<i64, sqlx::Error> {
     // SQL文の実行
-    sqlx::query("INSERT INTO tasks (task, status, due_at) VALUES (?, ?, ?)")
+    sqlx::query("INSERT INTO tasks (task, status, due_at) VALUES (?, 0, ?)")
         .bind(task_value)
-        .bind(status)
         .bind(due_at_value)
         .execute(pool)
         .await?;
@@ -57,24 +55,14 @@ pub async fn add_task(
     Ok(id)
 }
 
-pub async fn start_task(pool: &SqlitePool, id: i64, status: i32) -> SqliteQueryResult {
-    let sql = "UPDATE tasks SET status = ?, started_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?";
-    sqlx::query(sql)
-        .bind(status)
-        .bind(id)
-        .execute(pool)
-        .await
-        .unwrap()
+pub async fn start_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
+    let sql = "UPDATE tasks SET status = 1, started_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?";
+    sqlx::query(sql).bind(id).execute(pool).await.unwrap()
 }
 
-pub async fn done_task(pool: &SqlitePool, id: i64, status: i32) -> SqliteQueryResult {
-    let sql = "UPDATE tasks SET status = ?, done_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?";
-    sqlx::query(sql)
-        .bind(status)
-        .bind(id)
-        .execute(pool)
-        .await
-        .unwrap()
+pub async fn done_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
+    let sql = "UPDATE tasks SET status = 9, done_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?";
+    sqlx::query(sql).bind(id).execute(pool).await.unwrap()
 }
 
 /// Reverts the status of a task to "not started".
@@ -94,24 +82,14 @@ pub async fn done_task(pool: &SqlitePool, id: i64, status: i32) -> SqliteQueryRe
 ///
 /// Note: This function is intended to be used within an Actix Web application,
 /// where the `SqlitePool` is properly configured and managed by the framework.
-pub async fn undo_task(pool: &SqlitePool, id: i64, status: i32) -> SqliteQueryResult {
-    let sql = "UPDATE tasks SET status = ?, started_at = NULL WHERE id = ?";
-    sqlx::query(sql)
-        .bind(status)
-        .bind(id)
-        .execute(pool)
-        .await
-        .unwrap()
+pub async fn undo_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
+    let sql = "UPDATE tasks SET status = 0, started_at = NULL WHERE id = ?";
+    sqlx::query(sql).bind(id).execute(pool).await.unwrap()
 }
 
-pub async fn doing_task(pool: &SqlitePool, id: i64, status: i32) -> SqliteQueryResult {
-    let sql = "UPDATE tasks SET status = ?, done_at = NULL WHERE id = ?";
-    sqlx::query(sql)
-        .bind(status)
-        .bind(id)
-        .execute(pool)
-        .await
-        .unwrap()
+pub async fn doing_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
+    let sql = "UPDATE tasks SET status = 1, done_at = NULL WHERE id = ?";
+    sqlx::query(sql).bind(id).execute(pool).await.unwrap()
 }
 
 pub async fn remove_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
@@ -177,7 +155,6 @@ mod tests {
         let _id = add_task(
             &pool,
             "test_task001".to_string(),
-            0,
             "2025-02-23T00:00:00Z".to_string(),
         )
         .await
@@ -206,14 +183,13 @@ mod tests {
         let _id = add_task(
             &pool,
             "test_task001".to_string(),
-            0,
             "2025-02-23T00:00:00Z".to_string(),
         )
         .await
         .unwrap();
 
         // タスクを開始
-        start_task(&pool, 1, 1).await;
+        start_task(&pool, 1).await;
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
@@ -236,17 +212,16 @@ mod tests {
         let _id = add_task(
             &pool,
             "test_task001".to_string(),
-            0,
             "2025-02-23T00:00:00Z".to_string(),
         )
         .await
         .unwrap();
 
         // タスクを開始
-        start_task(&pool, 1, 1).await;
+        start_task(&pool, 1).await;
 
         // タスクを終了
-        done_task(&pool, 1, 9).await;
+        done_task(&pool, 1).await;
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
@@ -269,17 +244,16 @@ mod tests {
         let _id = add_task(
             &pool,
             "test_task001".to_string(),
-            0,
             "2025-02-23T00:00:00Z".to_string(),
         )
         .await
         .unwrap();
 
         // タスクを開始
-        start_task(&pool, 1, 1).await;
+        start_task(&pool, 1).await;
 
         // タスクを未着手に戻す
-        undo_task(&pool, 1, 0).await;
+        undo_task(&pool, 1).await;
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
@@ -302,20 +276,19 @@ mod tests {
         let _id = add_task(
             &pool,
             "test_task001".to_string(),
-            0,
             "2025-02-23T00:00:00Z".to_string(),
         )
         .await
         .unwrap();
 
         // タスクを開始
-        start_task(&pool, 1, 1).await;
+        start_task(&pool, 1).await;
 
         // タスクを終了
-        done_task(&pool, 1, 9).await;
+        done_task(&pool, 1).await;
 
         // タスクを仕掛かり中に戻す
-        doing_task(&pool, 1, 1).await;
+        doing_task(&pool, 1).await;
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
