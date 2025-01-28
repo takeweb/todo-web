@@ -26,10 +26,14 @@ pub async fn get_task_list(pool: &SqlitePool, status: i32) -> Vec<TaskRegisterd>
             id: row.get::<i64, _>("id"),
             task: row.get::<String, _>("task"),
             status: row.get::<i32, _>("status"),
-            created_at: Some(row.get::<String, _>("created_at")),
-            due_at: Some(row.get::<String, _>("due_at")),
-            started_at: Some(row.get::<String, _>("started_at")),
-            done_at: Some(row.get::<String, _>("done_at")),
+            created_at: row
+                .try_get::<Option<String>, _>("created_at")
+                .unwrap_or(None),
+            due_at: row.try_get::<Option<String>, _>("due_at").unwrap_or(None),
+            started_at: row
+                .try_get::<Option<String>, _>("started_at")
+                .unwrap_or(None),
+            done_at: row.try_get::<Option<String>, _>("done_at").unwrap_or(None),
         })
         .collect();
     tasks
@@ -162,7 +166,7 @@ mod tests {
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
-        println!("Task found: {:?}", result);
+        // println!("Task found: {:?}", result);
         // let results = get_task_list(&pool, 0).await;
         // println!("Task found: {:?}", results);
 
@@ -193,7 +197,7 @@ mod tests {
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
-        println!("Task found: {:?}", result);
+        // println!("Task found: {:?}", result);
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -225,7 +229,7 @@ mod tests {
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
-        println!("Task found: {:?}", result);
+        // println!("Task found: {:?}", result);
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -257,7 +261,7 @@ mod tests {
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
-        println!("Task found: {:?}", result);
+        // println!("Task found: {:?}", result);
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -292,7 +296,7 @@ mod tests {
 
         // 結果を検証
         let result = get_task(&pool, 1).await.unwrap();
-        println!("Task found: {:?}", result);
+        // println!("Task found: {:?}", result);
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -301,5 +305,85 @@ mod tests {
         assert!(result.due_at.is_some()); // due_atはNULL以外
         assert!(result.started_at.is_some()); // started_atはNULL以外
         assert!(result.done_at.is_none()); // done_atはNULL
+    }
+
+    #[tokio::test]
+    async fn test_remove_task() {
+        let pool = setup_test_db().await;
+
+        // 関数を呼び出して、タスクを追加
+        let _id = add_task(
+            &pool,
+            "test_task001".to_string(),
+            "2025-02-23T00:00:00Z".to_string(),
+        )
+        .await
+        .unwrap();
+
+        // タスクを削除
+        remove_task(&pool, 1).await;
+
+        // 結果を検証
+        let result = get_task(&pool, 1).await;
+
+        // 結果検証
+        assert!(result.is_err()); // 該当なし
+    }
+
+    #[tokio::test]
+    async fn test_get_task_list_unstarted() {
+        let pool = setup_test_db().await;
+
+        // 関数を呼び出して、タスクを追加
+        add_task(
+            &pool,
+            "test_task001".to_string(),
+            "2025-02-23T00:00:00Z".to_string(),
+        )
+        .await
+        .unwrap();
+
+        add_task(
+            &pool,
+            "test_task002".to_string(),
+            "2025-02-23T00:00:00Z".to_string(),
+        )
+        .await
+        .unwrap();
+
+        add_task(
+            &pool,
+            "test_task003".to_string(),
+            "2025-02-23T00:00:00Z".to_string(),
+        )
+        .await
+        .unwrap();
+
+        // タスクを開始
+        start_task(&pool, 2).await;
+        start_task(&pool, 3).await;
+
+        // タスクを終了
+        done_task(&pool, 3).await;
+
+        // 未着手のタスクを取得
+        let unstarted_tasks = get_task_list(&pool, 0).await;
+        let unstarted_task = unstarted_tasks.first().unwrap();
+
+        // // 仕掛かり中のタスクを取得
+        // let in_progress_tasks = get_task_list(&pool, 1).await;
+
+        // // 完了タスクを取得
+        // let completed_tasks = get_task_list(&pool, 9).await;
+
+        println!("Task found: {:?}", unstarted_tasks);
+
+        // 結果検証
+        assert_eq!(unstarted_task.task, "test_task001".to_string()); // タスク
+        assert_eq!(unstarted_task.status, 0); // ステータスが未着手
+        assert!(unstarted_task.created_at.is_some()); // created_atはNULL以外
+        assert!(unstarted_task.due_at.is_some()); // due_atはNULL以外
+        assert!(unstarted_task.started_at.is_none()); // started_atはNULL
+        assert!(unstarted_task.done_at.is_none()); // done_atはNULL
     }
 }
