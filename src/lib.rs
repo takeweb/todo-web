@@ -9,7 +9,7 @@ pub mod db;
 
 #[derive(serde::Deserialize)]
 struct Task {
-    id: Option<String>,
+    id: Option<i64>,
     task: Option<String>,
     due_at: Option<String>,
 }

@@ -57,7 +57,7 @@ pub async fn add_task(
     Ok(id)
 }
 
-pub async fn start_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQueryResult {
+pub async fn start_task(pool: &SqlitePool, id: i64, status: i32) -> SqliteQueryResult {
     let sql = "UPDATE tasks SET status = ?, started_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?";
     sqlx::query(sql)
         .bind(status)
@@ -67,7 +67,7 @@ pub async fn start_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQue
         .unwrap()
 }
 
-pub async fn done_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQueryResult {
+pub async fn done_task(pool: &SqlitePool, id: i64, status: i32) -> SqliteQueryResult {
     let sql = "UPDATE tasks SET status = ?, done_at = DATETIME(CURRENT_TIMESTAMP, '+9 hours') WHERE id = ?";
     sqlx::query(sql)
         .bind(status)
@@ -94,7 +94,7 @@ pub async fn done_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQuer
 ///
 /// Note: This function is intended to be used within an Actix Web application,
 /// where the `SqlitePool` is properly configured and managed by the framework.
-pub async fn undo_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQueryResult {
+pub async fn undo_task(pool: &SqlitePool, id: i64, status: i32) -> SqliteQueryResult {
     let sql = "UPDATE tasks SET status = ?, started_at = NULL WHERE id = ?";
     sqlx::query(sql)
         .bind(status)
@@ -104,7 +104,7 @@ pub async fn undo_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQuer
         .unwrap()
 }
 
-pub async fn doing_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQueryResult {
+pub async fn doing_task(pool: &SqlitePool, id: i64, status: i32) -> SqliteQueryResult {
     let sql = "UPDATE tasks SET status = ?, done_at = NULL WHERE id = ?";
     sqlx::query(sql)
         .bind(status)
@@ -114,7 +114,7 @@ pub async fn doing_task(pool: &SqlitePool, id: String, status: i32) -> SqliteQue
         .unwrap()
 }
 
-pub async fn remove_task(pool: &SqlitePool, id: String) -> SqliteQueryResult {
+pub async fn remove_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
     let sql = "DELETE FROM tasks WHERE id = ?";
     sqlx::query(sql).bind(id).execute(pool).await.unwrap()
 }
@@ -169,7 +169,7 @@ mod tests {
         pool
     }
 
-    #[actix_web::test]
+    #[tokio::test]
     async fn test_add_task() {
         let pool = setup_test_db().await;
 
@@ -190,8 +190,143 @@ mod tests {
         // println!("Task found: {:?}", results);
 
         // 結果検証
-        assert_eq!(result.status, 0); // ステータス
-        assert!(result.started_at.is_none()); // started_atはNULL
         assert_eq!(result.task, "test_task001".to_string()); // タスク
+        assert_eq!(result.status, 0); // ステータスが未着手
+        assert!(result.created_at.is_some()); // created_atはNULL以外
+        assert!(result.due_at.is_some()); // due_atはNULL以外
+        assert!(result.started_at.is_none()); // started_atはNULL
+        assert!(result.done_at.is_none()); // done_atはNULL
+    }
+
+    #[tokio::test]
+    async fn test_start_task() {
+        let pool = setup_test_db().await;
+
+        // 関数を呼び出して、タスクを追加
+        let _id = add_task(
+            &pool,
+            "test_task001".to_string(),
+            0,
+            "2025-02-23T00:00:00Z".to_string(),
+        )
+        .await
+        .unwrap();
+
+        // タスクを開始
+        start_task(&pool, 1, 1).await;
+
+        // 結果を検証
+        let result = get_task(&pool, 1).await.unwrap();
+        println!("Task found: {:?}", result);
+
+        // 結果検証
+        assert_eq!(result.task, "test_task001".to_string()); // タスク
+        assert_eq!(result.status, 1); // ステータスが着手
+        assert!(result.created_at.is_some()); // created_atはNULL以外
+        assert!(result.due_at.is_some()); // due_atはNULL以外
+        assert!(result.started_at.is_some()); // started_atはNULL以外
+        assert!(result.done_at.is_none()); // done_atはNULL
+    }
+
+    #[tokio::test]
+    async fn test_done_task() {
+        let pool = setup_test_db().await;
+
+        // 関数を呼び出して、タスクを追加
+        let _id = add_task(
+            &pool,
+            "test_task001".to_string(),
+            0,
+            "2025-02-23T00:00:00Z".to_string(),
+        )
+        .await
+        .unwrap();
+
+        // タスクを開始
+        start_task(&pool, 1, 1).await;
+
+        // タスクを終了
+        done_task(&pool, 1, 9).await;
+
+        // 結果を検証
+        let result = get_task(&pool, 1).await.unwrap();
+        println!("Task found: {:?}", result);
+
+        // 結果検証
+        assert_eq!(result.task, "test_task001".to_string()); // タスク
+        assert_eq!(result.status, 9); // ステータスが完了
+        assert!(result.created_at.is_some()); // created_atはNULL以外
+        assert!(result.due_at.is_some()); // due_atはNULL以外
+        assert!(result.started_at.is_some()); // started_atはNULL以外
+        assert!(result.done_at.is_some()); // done_atはNULL以外
+    }
+
+    #[tokio::test]
+    async fn test_undo_task() {
+        let pool = setup_test_db().await;
+
+        // 関数を呼び出して、タスクを追加
+        let _id = add_task(
+            &pool,
+            "test_task001".to_string(),
+            0,
+            "2025-02-23T00:00:00Z".to_string(),
+        )
+        .await
+        .unwrap();
+
+        // タスクを開始
+        start_task(&pool, 1, 1).await;
+
+        // タスクを未着手に戻す
+        undo_task(&pool, 1, 0).await;
+
+        // 結果を検証
+        let result = get_task(&pool, 1).await.unwrap();
+        println!("Task found: {:?}", result);
+
+        // 結果検証
+        assert_eq!(result.task, "test_task001".to_string()); // タスク
+        assert_eq!(result.status, 0); // ステータスが未着手
+        assert!(result.created_at.is_some()); // created_atはNULL以外
+        assert!(result.due_at.is_some()); // due_atはNULL以外
+        assert!(result.started_at.is_none()); // started_atはNULL
+        assert!(result.done_at.is_none()); // done_atはNULL
+    }
+
+    #[tokio::test]
+    async fn test_doing_task() {
+        let pool = setup_test_db().await;
+
+        // 関数を呼び出して、タスクを追加
+        let _id = add_task(
+            &pool,
+            "test_task001".to_string(),
+            0,
+            "2025-02-23T00:00:00Z".to_string(),
+        )
+        .await
+        .unwrap();
+
+        // タスクを開始
+        start_task(&pool, 1, 1).await;
+
+        // タスクを終了
+        done_task(&pool, 1, 9).await;
+
+        // タスクを仕掛かり中に戻す
+        doing_task(&pool, 1, 1).await;
+
+        // 結果を検証
+        let result = get_task(&pool, 1).await.unwrap();
+        println!("Task found: {:?}", result);
+
+        // 結果検証
+        assert_eq!(result.task, "test_task001".to_string()); // タスク
+        assert_eq!(result.status, 1); // ステータスが仕掛かり中
+        assert!(result.created_at.is_some()); // created_atはNULL以外
+        assert!(result.due_at.is_some()); // due_atはNULL以外
+        assert!(result.started_at.is_some()); // started_atはNULL以外
+        assert!(result.done_at.is_none()); // done_atはNULL
     }
 }
