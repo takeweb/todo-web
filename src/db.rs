@@ -1,6 +1,6 @@
-use sqlx::{sqlite::SqliteQueryResult, Pool, Row, Sqlite, SqlitePool};
+use sqlx::{sqlite::SqliteQueryResult, FromRow, Pool, Sqlite, SqlitePool};
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(serde::Deserialize, Debug, FromRow)]
 pub struct TaskRegisterd {
     pub id: i64,
     pub task: String,
@@ -18,24 +18,11 @@ pub async fn init_db_pool(database_url: &str) -> Pool<Sqlite> {
 
 pub async fn get_task_list(pool: &SqlitePool, status: i32) -> Vec<TaskRegisterd> {
     const SQL: &str = include_str!("sql/get_task_list.sql");
-    let rows = sqlx::query(SQL).bind(status).fetch_all(pool).await.unwrap();
-    let tasks: Vec<TaskRegisterd> = rows
-        .iter()
-        .map(|row| TaskRegisterd {
-            id: row.get::<i64, _>("id"),
-            task: row.get::<String, _>("task"),
-            status: row.get::<i32, _>("status"),
-            created_at: row
-                .try_get::<Option<String>, _>("created_at")
-                .unwrap_or(None),
-            due_at: row.try_get::<Option<String>, _>("due_at").unwrap_or(None),
-            started_at: row
-                .try_get::<Option<String>, _>("started_at")
-                .unwrap_or(None),
-            done_at: row.try_get::<Option<String>, _>("done_at").unwrap_or(None),
-        })
-        .collect();
-    tasks
+    sqlx::query_as::<_, TaskRegisterd>(SQL)
+        .bind(status)
+        .fetch_all(pool)
+        .await
+        .unwrap_or_else(|_| vec![])
 }
 
 pub async fn add_task(
@@ -102,24 +89,10 @@ pub async fn remove_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
 
 pub async fn get_task(pool: &SqlitePool, id: i64) -> Result<TaskRegisterd, sqlx::Error> {
     const SQL: &str = include_str!("sql/get_task.sql");
-    let row = sqlx::query(SQL).bind(id).fetch_one(pool).await?;
-
-    // TaskRegisterd構造体に変換
-    let task = TaskRegisterd {
-        id: row.get::<i64, _>("id"),
-        task: row.get::<String, _>("task"),
-        status: row.get::<i32, _>("status"),
-        created_at: row
-            .try_get::<Option<String>, _>("created_at")
-            .unwrap_or(None),
-        due_at: row.try_get::<Option<String>, _>("due_at").unwrap_or(None),
-        started_at: row
-            .try_get::<Option<String>, _>("started_at")
-            .unwrap_or(None),
-        done_at: row.try_get::<Option<String>, _>("done_at").unwrap_or(None),
-    };
-
-    Ok(task)
+    sqlx::query_as::<_, TaskRegisterd>(SQL)
+        .bind(id)
+        .fetch_one(pool)
+        .await
 }
 
 #[cfg(test)]
