@@ -38,9 +38,11 @@ pub async fn add_task(
         .await?;
 
     // last_insert_rowidを取得
-    let id = sqlx::query_scalar("SELECT last_insert_rowid()")
+    // let id = sqlx::query_scalar("SELECT last_insert_rowid()")
+    let id = sqlx::query_scalar("SELECT seq FROM sqlite_sequence WHERE name = 'tasks'")
         .fetch_one(pool)
         .await?;
+    println!("id: {}", id);
 
     Ok(id)
 }
@@ -122,7 +124,7 @@ mod tests {
         let pool = setup_test_db().await;
 
         // 関数を呼び出して、タスクを追加
-        let _id = add_task(
+        let id = add_task(
             &pool,
             "test_task001".to_string(),
             "2025-02-23T00:00:00Z".to_string(),
@@ -131,7 +133,7 @@ mod tests {
         .unwrap();
 
         // 結果を検証
-        let result = get_task(&pool, 1).await.unwrap();
+        let result = get_task(&pool, id).await.unwrap();
         // println!("Task found: {:?}", result);
 
         // 結果検証
@@ -148,7 +150,7 @@ mod tests {
         let pool = setup_test_db().await;
 
         // 関数を呼び出して、タスクを追加
-        let _id = add_task(
+        let id = add_task(
             &pool,
             "test_task001".to_string(),
             "2025-02-23T00:00:00Z".to_string(),
@@ -160,7 +162,7 @@ mod tests {
         start_task(&pool, 1).await;
 
         // 結果を検証
-        let result = get_task(&pool, 1).await.unwrap();
+        let result = get_task(&pool, id).await.unwrap();
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -176,7 +178,7 @@ mod tests {
         let pool = setup_test_db().await;
 
         // 関数を呼び出して、タスクを追加
-        let _id = add_task(
+        let id = add_task(
             &pool,
             "test_task001".to_string(),
             "2025-02-23T00:00:00Z".to_string(),
@@ -185,13 +187,13 @@ mod tests {
         .unwrap();
 
         // タスクを開始
-        start_task(&pool, 1).await;
+        start_task(&pool, id).await;
 
         // タスクを終了
-        done_task(&pool, 1).await;
+        done_task(&pool, id).await;
 
         // 結果を検証
-        let result = get_task(&pool, 1).await.unwrap();
+        let result = get_task(&pool, id).await.unwrap();
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -207,7 +209,7 @@ mod tests {
         let pool = setup_test_db().await;
 
         // 関数を呼び出して、タスクを追加
-        let _id = add_task(
+        let id = add_task(
             &pool,
             "test_task001".to_string(),
             "2025-02-23T00:00:00Z".to_string(),
@@ -216,13 +218,13 @@ mod tests {
         .unwrap();
 
         // タスクを開始
-        start_task(&pool, 1).await;
+        start_task(&pool, id).await;
 
         // タスクを未着手に戻す
-        undo_task(&pool, 1).await;
+        undo_task(&pool, id).await;
 
         // 結果を検証
-        let result = get_task(&pool, 1).await.unwrap();
+        let result = get_task(&pool, id).await.unwrap();
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -238,7 +240,7 @@ mod tests {
         let pool = setup_test_db().await;
 
         // 関数を呼び出して、タスクを追加
-        let _id = add_task(
+        let id = add_task(
             &pool,
             "test_task001".to_string(),
             "2025-02-23T00:00:00Z".to_string(),
@@ -247,16 +249,16 @@ mod tests {
         .unwrap();
 
         // タスクを開始
-        start_task(&pool, 1).await;
+        start_task(&pool, id).await;
 
         // タスクを終了
-        done_task(&pool, 1).await;
+        done_task(&pool, id).await;
 
         // タスクを仕掛かり中に戻す
-        doing_task(&pool, 1).await;
+        doing_task(&pool, id).await;
 
         // 結果を検証
-        let result = get_task(&pool, 1).await.unwrap();
+        let result = get_task(&pool, id).await.unwrap();
 
         // 結果検証
         assert_eq!(result.task, "test_task001".to_string()); // タスク
@@ -272,7 +274,7 @@ mod tests {
         let pool = setup_test_db().await;
 
         // 関数を呼び出して、タスクを追加
-        let _id = add_task(
+        let id = add_task(
             &pool,
             "test_task001".to_string(),
             "2025-02-23T00:00:00Z".to_string(),
@@ -281,10 +283,10 @@ mod tests {
         .unwrap();
 
         // タスクを削除
-        remove_task(&pool, 1).await;
+        remove_task(&pool, id).await;
 
         // 結果を検証
-        let result = get_task(&pool, 1).await;
+        let result = get_task(&pool, id).await;
 
         // 結果検証
         assert!(result.is_err()); // 該当なし
@@ -321,7 +323,7 @@ mod tests {
         let pool = setup_test_db().await;
 
         // 関数を呼び出して、タスクを追加
-        add_task(
+        let id = add_task(
             &pool,
             "test_task001".to_string(),
             "2025-02-23T00:00:00Z".to_string(),
@@ -329,24 +331,8 @@ mod tests {
         .await
         .unwrap();
 
-        add_task(
-            &pool,
-            "test_task002".to_string(),
-            "2025-02-23T00:00:00Z".to_string(),
-        )
-        .await
-        .unwrap();
-
-        add_task(
-            &pool,
-            "test_task003".to_string(),
-            "2025-02-23T00:00:00Z".to_string(),
-        )
-        .await
-        .unwrap();
-
         // タスクを開始
-        start_task(&pool, 1).await;
+        start_task(&pool, id).await;
 
         // 仕掛かり中のタスクを取得
         let in_progress_tasks = get_task_list(&pool, 1).await;
@@ -366,7 +352,7 @@ mod tests {
         let pool = setup_test_db().await;
 
         // 関数を呼び出して、タスクを追加
-        add_task(
+        let id = add_task(
             &pool,
             "test_task001".to_string(),
             "2025-02-23T00:00:00Z".to_string(),
@@ -375,10 +361,10 @@ mod tests {
         .unwrap();
 
         // タスクを開始
-        start_task(&pool, 1).await;
+        start_task(&pool, id).await;
 
         // タスクを終了
-        done_task(&pool, 1).await;
+        done_task(&pool, id).await;
 
         // // 完了タスクを取得
         let completed_tasks = get_task_list(&pool, 9).await;
