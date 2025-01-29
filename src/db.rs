@@ -37,12 +37,9 @@ pub async fn add_task(
         .execute(pool)
         .await?;
 
-    // last_insert_rowidを取得
-    // let id = sqlx::query_scalar("SELECT last_insert_rowid()")
-    let id = sqlx::query_scalar("SELECT seq FROM sqlite_sequence WHERE name = 'tasks'")
-        .fetch_one(pool)
-        .await?;
-    println!("id: {}", id);
+    // idを取得
+    const MAX_ID_SQL: &str = include_str!("sql/get_max_id.sql");
+    let id = sqlx::query_scalar(MAX_ID_SQL).fetch_one(pool).await?;
 
     Ok(id)
 }
