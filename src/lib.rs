@@ -83,13 +83,7 @@ pub async fn create(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpR
                     .format("%Y-%m-%d %H:%M:%S")
                     .to_string()
             });
-            let _id = db::add_task(
-                pool.as_ref(),
-                task_value,
-                TaskStatus::NotStarted.into(),
-                due_at_value,
-            )
-            .await;
+            let _id = db::add_task(pool.as_ref(), task_value, due_at_value).await;
         }
         _ => {}
     }
@@ -105,7 +99,7 @@ pub async fn start(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRe
 
     // 開始ボタン押下時
     if let Some(id) = task.id {
-        db::start_task(pool.as_ref(), id, TaskStatus::InProgress.into()).await;
+        db::start_task(pool.as_ref(), id).await;
     }
 
     HttpResponse::Found()
@@ -119,7 +113,7 @@ pub async fn done(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRes
 
     // 完了ボタン押下時
     if let Some(id) = task.id {
-        db::done_task(&pool, id, TaskStatus::Completed.into()).await;
+        db::done_task(&pool, id).await;
     }
 
     HttpResponse::Found()
@@ -133,7 +127,7 @@ pub async fn undo(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRes
 
     // 戻す(仕掛かり中→未着手)ボタン押下時
     if let Some(id) = task.id {
-        db::undo_task(&pool, id, TaskStatus::NotStarted.into()).await;
+        db::undo_task(&pool, id).await;
     }
 
     HttpResponse::Found()
@@ -147,7 +141,7 @@ pub async fn doing(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRe
 
     // 戻す(完了→仕掛かり中)ボタン押下時
     if let Some(id) = task.id {
-        db::doing_task(&pool, id, TaskStatus::InProgress.into()).await;
+        db::doing_task(&pool, id).await;
     }
 
     HttpResponse::Found()
