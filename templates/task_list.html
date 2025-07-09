@@ -1,0 +1,31 @@
+{% macro render_tasks(tasks, status) %} {% for task in tasks %}
+<div class="col-12" data-task-id="{{ task.id }}">
+  <div
+    class="d-flex align-items-center justify-content-between border p-1 rounded"
+  >
+    <div class="flex-grow-1">{{ task.task }}</div>
+    <form class="d-flex gap-2 mb-0">
+      <input type="hidden" id="id" value="{{ task.id }}" />
+      {% if status == 0 %}
+      <button type="button" id="delete-{{ task.id }}" class="btn btn-secondary">
+        削除
+      </button>
+      <button type="button" id="start-{{ task.id }}" class="btn btn-primary">
+        開始
+      </button>
+      {% else if status == 1 %}
+      <button type="button" id="undo-{{ task.id }}" class="btn btn-secondary">
+        戻す
+      </button>
+      <button type="button" id="done-{{ task.id }}" class="btn btn-success">
+        完了
+      </button>
+      {% else if status == 9 %}
+      <button type="button" id="doing-{{ task.id }}" class="btn btn-secondary">
+        戻す
+      </button>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% endfor %} {% endmacro %}

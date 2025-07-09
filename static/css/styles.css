@@ -6,22 +6,28 @@ body {
     background-color: #f9f9f9;
 }
 
-/* コンテンツのコンテナ */
-.container {
-    width: 80%;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 16px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-top: 10px;
+.task-container {
+    min-height: 550px;
+    max-height: 75vh;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    /* padding: 10px; */ /* これを削除または調整 */
+    padding-top: 5px; /* 上下のパディングは残す */
+    padding-bottom: 5px; /* 上下のパディングは残す */
+    /* サイドのパディングはBootstrapの `gx-*` や `px-*` クラスで管理するのが望ましい */
+    /* 背景色を少しつけて、ドロップ領域をわかりやすくする */
+    background-color: #f8f9fa;
+    align-items: flex-start;
 }
 
-/* タスクリスト全体 */
-.row {
-    gap: 15px; /* 列間の隙間を広く */
+/* タスクアイテムの間のマージンを調整 */
+.task-container .col-12 {
+    margin-bottom: 0px; /* 各タスクアイテムの下に余白 */
+}
+/* 最後のタスクアイテムの下の余白をなくす（任意） */
+.task-container .col-12:last-child {
+    margin-bottom: 0;
 }
 
 .new-task-form {
@@ -43,6 +49,7 @@ body {
 
 /* タスクコンテナ */
 .task-container {
+    min-height: 550px; /* 最小の高さを指定 */
     max-height: 75vh; /* 必要に応じて高さを調整 */
     overflow-y: auto; /* 縦スクロールを有効にする */
     border: 1px solid #ccc;
@@ -86,4 +93,18 @@ body {
     z-index: 1;
     background-color: white; /* 背景色を設定 */
     border-bottom: 1px solid #ddd; /* ボーダーを追加 */
+}
+
+/* ドラッグ可能なタスクアイテムのカーソル設定 */
+.col-12[data-task-id] {
+    transition: background-color 0.2s ease; /* スムーズな背景色変化 */
+}
+.col-12[data-task-id]:hover {
+    cursor: grab; /* マウスを乗せると「開いた手」マークに */
+    background-color: #f8f9fa; /* ホバー時に少し色を付ける */
+}
+
+/* ドラッグ中のアイテムのカーソル設定 */
+.sortable-chosen, .sortable-ghost, .sortable-drag {
+    cursor: grabbing; /* ドラッグ中は「掴んだ手」マークに */
 }

@@ -89,7 +89,7 @@ pub async fn create(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpR
     }
 
     HttpResponse::Found()
-        .append_header(("Location", "/"))
+        .append_header(("Location", "/todo_new/"))
         .finish()
 }
 
@@ -103,7 +103,7 @@ pub async fn start(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRe
     }
 
     HttpResponse::Found()
-        .append_header(("Location", "/"))
+        .append_header(("Location", "/todo_new/"))
         .finish()
 }
 
@@ -117,7 +117,7 @@ pub async fn done(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRes
     }
 
     HttpResponse::Found()
-        .append_header(("Location", "/"))
+        .append_header(("Location", "/todo_new/"))
         .finish()
 }
 
@@ -131,7 +131,7 @@ pub async fn undo(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRes
     }
 
     HttpResponse::Found()
-        .append_header(("Location", "/"))
+        .append_header(("Location", "/todo_new/"))
         .finish()
 }
 
@@ -145,7 +145,7 @@ pub async fn doing(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpRe
     }
 
     HttpResponse::Found()
-        .append_header(("Location", "/"))
+        .append_header(("Location", "/todo_new/"))
         .finish()
 }
 
@@ -159,6 +159,6 @@ pub async fn delete(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpR
     }
 
     HttpResponse::Found()
-        .append_header(("Location", "/"))
+        .append_header(("Location", "/todo_new/"))
         .finish()
 }
