@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TODO App</title>
     <meta name="base-url" content="/todo_new" />
+    <link rel="icon" type="image/svg" href="./static/img/card-checklist.svg" />
     <link rel="stylesheet" href="./static/css/styles.css" />
     <!-- Bootstrap 5 CSS -->
     <link
@@ -74,8 +75,8 @@
               <div
                 class="d-flex align-items-center justify-content-between border p-1 rounded"
               >
-                <div class="flex-grow-1">{{ task.task }}</div>
-                <form class="d-flex gap-2 mb-0">
+                <div class="flex-grow-1 col-10 me-1">{{ task.task }}</div>
+                <form class="d-flex gap-2 mb-0 col-2">
                   <input type="hidden" name="id" value="{{ task.id }}" />
                   <button
                     type="button"
@@ -83,13 +84,6 @@
                     class="btn btn-secondary"
                   >
                     削除
-                  </button>
-                  <button
-                    type="button"
-                    id="start-{{ task.id }}"
-                    class="btn btn-primary"
-                  >
-                    開始
                   </button>
                 </form>
               </div>
@@ -107,23 +101,9 @@
               <div
                 class="d-flex align-items-center justify-content-between border p-1 rounded"
               >
-                <div class="flex-grow-1">{{ task.task }}</div>
-                <form class="d-flex gap-2 mb-0">
+                <div class="flex-grow-1 col-10 me-1">{{ task.task }}</div>
+                <form class="d-flex gap-2 mb-0 col-2">
                   <input type="hidden" name="id" value="{{ task.id }}" />
-                  <button
-                    type="button"
-                    id="undo-{{ task.id }}"
-                    class="btn btn-secondary"
-                  >
-                    戻す
-                  </button>
-                  <button
-                    type="button"
-                    id="done-{{ task.id }}"
-                    class="btn btn-success"
-                  >
-                    完了
-                  </button>
                 </form>
               </div>
             </div>
@@ -140,16 +120,9 @@
               <div
                 class="d-flex align-items-center justify-content-between border p-1 rounded"
               >
-                <div class="flex-grow-1">{{ task.task }}</div>
-                <form class="d-flex gap-2 mb-0">
+                <div class="flex-grow-1 col-10 me-1">{{ task.task }}</div>
+                <form class="d-flex gap-2 mb-0 col-2">
                   <input type="hidden" name="id" value="{{ task.id }}" />
-                  <button
-                    type="button"
-                    id="doing-{{ task.id }}"
-                    class="btn btn-secondary"
-                  >
-                    戻す
-                  </button>
                 </form>
               </div>
             </div>

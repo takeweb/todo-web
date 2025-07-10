@@ -49,12 +49,19 @@ body {
 
 /* タスクコンテナ */
 .task-container {
-    min-height: 550px; /* 最小の高さを指定 */
+    min-height: 75vh; /* 最小の高さを指定 */
     max-height: 75vh; /* 必要に応じて高さを調整 */
     overflow-y: auto; /* 縦スクロールを有効にする */
     border: 1px solid #ccc;
     border-radius: 5px;
     padding: 10px;
+}
+
+/* タスクアイテムのコンテナ */
+.d-flex.align-items-center.justify-content-between.border.p-1.rounded {
+  min-height: 50px; /* ここで適切な最小の高さを指定します */
+  /* 必要であれば、margin-bottom などでアイテム間の間隔を調整 */
+  margin-bottom: 5px; /* 例: 各タスクアイテムの下に少し余白を追加 */
 }
 
 /* タスクアイテム */
