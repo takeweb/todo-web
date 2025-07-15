@@ -162,3 +162,18 @@ pub async fn delete(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpR
         .append_header(("Location", "/todo_new/"))
         .finish()
 }
+
+#[post("/archive")]
+pub async fn archive(pool: web::Data<SqlitePool>, form: web::Form<Task>) -> HttpResponse {
+    let task = form.into_inner();
+
+    // 退避ボタン押下時
+    if let Some(id) = task.id {
+        db::archive_task(&pool, id).await;
+        db::remove_task(&pool, id).await;
+    }
+
+    HttpResponse::Found()
+        .append_header(("Location", "/todo_new/"))
+        .finish()
+}

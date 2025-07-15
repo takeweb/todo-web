@@ -46,6 +46,8 @@ document.addEventListener("DOMContentLoaded", () => {
       sendPostRequest(`${APP_BASE_URL}/undo`, taskId);
     } else if (button.id.startsWith("doing")) {
       sendPostRequest(`${APP_BASE_URL}/doing`, taskId);
+    } else if (button.id.startsWith("archive")) {
+      sendPostRequest(`${APP_BASE_URL}/archive`, taskId);
     }
   }
 

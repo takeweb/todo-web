@@ -61,9 +61,14 @@ ENV DATABASE_URL="sqlite://db/database.db"
 # データベースディレクトリが存在しない場合に作成します。
 RUN mkdir -p db
 
+# マイグレーションファイルが存在する`migrations`ディレクトリをコピーします。
+# `COPY . .`で既にコピーされますが、明示的に記述することで意図を明確にします。
+COPY migrations ./migrations
+
 # マイグレーションを実行します。
 # ここでdb/database.dbが作成され、スキーマが適用されます。
-RUN sqlx migrate run
+# マイグレーションが成功したことを確認するために、ファイルが存在するかチェックします。
+RUN sqlx migrate run && ls -l db/database.db
 
 # リリースビルドを実行します。
 # 依存関係はすでにビルドされているため、このステップは主にアプリケーションコードのコンパイルとリンクになります。
@@ -87,15 +92,27 @@ WORKDIR /app
 COPY --from=app_builder /app/target/release/todo-web ./todo-web
 
 # アプリケーションが実行時に参照するファイルをコピーします。
-# .envファイルと、マイグレーション済みのdatabase.dbを含むdbディレクトリをコピーします。
+# .envファイルと、マイグレーションファイル、静的ファイル、テンプレートファイルをコピーします。
 COPY --from=app_builder /app/.env ./.env
-COPY --from=app_builder /app/db ./db
-# COPY --from=app_builder /app/migrations ./migrations
+
+# ビルド時に生成されたdatabase.dbは最終イメージに含めません。
+# 実行時にはマウントされたボリュームからdatabase.dbが提供されることを想定します。
+COPY --from=app_builder /app/migrations ./migrations
 COPY --from=app_builder /app/static ./static
 COPY --from=app_builder /app/templates ./templates
 
-# 環境変数の設定 (アプリケーションが.envから読み込むことを想定)
-# ENV DATABASE_URL="sqlite://db/database.db"
+# app_builderステージで sqlx-cli のバイナリを一時的にビルドしてコピー
+COPY --from=app_builder /usr/local/cargo/bin/sqlx /usr/local/bin/sqlx
+
+# Entrypoint スクリプトを用意
+RUN mkdir -p /docker-entrypoint.d
+COPY ./shell/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# entrypoint スクリプトを追加
+COPY ./shell/exec_migration.sh /docker-entrypoint.d/exec_migration.sh
+RUN chmod +x /docker-entrypoint.d/exec_migration.sh
 
 # ポートの公開
 EXPOSE 8080

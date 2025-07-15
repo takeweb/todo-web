@@ -62,10 +62,17 @@ cargo install sqlx-cli
 sqlx database create --database-url "sqlite:./db/database.db"
 ```
 
+## 新たなマイグレーションを作成
+```
+sqlx migrate add -r <マイグレーション名>
+```
+
 ## マイグレーションを適用 ※マイグレーションが実行されていない場合
 ```
 sqlx migrate run
 ``
+
+
 
 #　使い方
 ## 起動

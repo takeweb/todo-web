@@ -123,6 +123,13 @@
                 <div class="flex-grow-1 col-10 me-1">{{ task.task }}</div>
                 <form class="d-flex gap-2 mb-0 col-2">
                   <input type="hidden" name="id" value="{{ task.id }}" />
+                  <button
+                    type="button"
+                    id="archive-{{ task.id }}"
+                    class="btn btn-secondary"
+                  >
+                    退避
+                  </button>
                 </form>
               </div>
             </div>

@@ -86,6 +86,11 @@ pub async fn remove_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
     sqlx::query(SQL).bind(id).execute(pool).await.unwrap()
 }
 
+pub async fn archive_task(pool: &SqlitePool, id: i64) -> SqliteQueryResult {
+    const SQL: &str = include_str!("sql/archive_task.sql");
+    sqlx::query(SQL).bind(id).execute(pool).await.unwrap()
+}
+
 pub async fn get_task(pool: &SqlitePool, id: i64) -> Result<TaskRegisterd, sqlx::Error> {
     const SQL: &str = include_str!("sql/get_task.sql");
     sqlx::query_as::<_, TaskRegisterd>(SQL)

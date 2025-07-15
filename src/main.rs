@@ -14,6 +14,7 @@ async fn main() -> std::io::Result<()> {
             .service(todo_web::undo)
             .service(todo_web::doing)
             .service(todo_web::delete)
+            .service(todo_web::archive)
             .app_data(web::Data::new(pool.clone()))
     })
     .bind(("0.0.0.0", 8080))?
