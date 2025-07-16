@@ -8,18 +8,15 @@ document.addEventListener("DOMContentLoaded", () => {
   let completedSortable;
 
   function initFlatpickr() {
-    flatpickr("#datepicker", {
+    const fp = flatpickr("#datepicker", {
       dateFormat: "Y/m/d", // 日付フォーマット（例: 2025/01/17）
       locale: "ja", // 日本語対応
     });
 
     // カレンダーアイコンがクリックされたときにカレンダーを表示
-    document
-      .getElementById("calendar-icon")
-      .addEventListener("click", function () {
-        const datepicker = document.getElementById("datepicker");
-        flatpickr(datepicker).open(); // アイコンクリックでカレンダーを開く
-      });
+    document.getElementById("calendar-icon").addEventListener("click", () => {
+      fp.open();
+    });
   }
 
   function attachButtonListeners() {
